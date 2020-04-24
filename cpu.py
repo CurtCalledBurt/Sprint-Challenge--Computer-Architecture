@@ -93,6 +93,12 @@ class CPU:
         HLT = 0b00000001
         ADD = 0b10100000
         MUL = 0b10100010
+        AND = 0b10101000
+        OR = 0b10101010
+        XOR = 0b10101011
+        NOT = 0b01101001
+        SHL = 0b10101100
+        SHR = 0b10101101
         PUSH = 0b01000101
         POP = 0b01000110
         RET = 0b00010001
@@ -127,22 +133,75 @@ class CPU:
                 value = self.reg[reg_num]
                 print(value)
 
+            # add 2 numbers together, placing result in the first given register
             elif inst == ADD:
-                # add 2 numbers together, placing result in the first given register
                 reg_A = self.ram[self.pc+1]
                 reg_B = self.ram[self.pc+1]
                 value = self.reg[reg_A] + self.reg[reg_B]
                 self.reg[reg_A] = value
-
+            
+            # multiply 2 numbers together, placing the result in the first given register
             elif inst == MUL:
-                # multiply 2 numbers together, placing the result in the first given register
                 reg_num1 = self.ram[self.pc+1]
                 reg_num2 = self.ram[self.pc+2]
                 value1 = self.reg[reg_num1]
                 value2 = self.reg[reg_num2]
                 value3 = value1 * value2
                 self.reg[reg_num1] = value3
+
+            # if both regA and regB are not 0, sets regA to 1
+            elif inst == AND:
+                reg_A = self.ram[self.pc+1]
+                reg_B = self.ram[self.pc+2]
+                value_A = self.reg[reg_A]
+                value_B = self.reg[reg_B]
+                result = value_A & value_B
+                self.reg[reg_A] = result
+
+            # if either regA or regB is not 0, sets regA to 1
+            elif inst == OR:
+                reg_A = self.ram[self.pc+1]
+                reg_B = self.ram[self.pc+2]
+                value_A = self.reg[reg_A]
+                value_B = self.reg[reg_B]
+                result = value_A | value_B
+                self.reg[reg_A] = result
+
+            # if either but not both regA and regB is not 0, sets regA to 1
+            elif inst == XOR:
+                reg_A = self.ram[self.pc+1]
+                reg_B = self.ram[self.pc+2]
+                value_A = self.reg[reg_A]
+                value_B = self.reg[reg_B]
+                result = value_A ^ value_B
+                self.reg[reg_A] = result
+
+            # sets the value in given register to its binary compliment 
+            elif inst == NOT:
+                reg_r = self.ram[self.pc+1]
+                value = self.reg[reg_r]
+                value = 0b11111111 - value
+                self.reg[reg_r] = value
             
+            # shifts the value in given register left bitwise x times
+            elif inst == SHL:
+                reg_A = self.ram[self.pc+1]
+                reg_B = self.ram[self.pc+2]
+                value = self.reg[reg_A]
+                shift_num = self.reg[reg_B]
+                value = value << shift_num
+                self.reg[reg_A] = value & 0b11111111
+
+            # shifts the value in the given register right bitwise x times
+            elif inst == SHR:
+                reg_A = self.ram[self.pc+1]
+                reg_B = self.ram[self.pc+2]
+                value = self.reg[reg_A]
+                shift_num = self.reg[reg_B]
+                value = value >> shift_num
+                self.reg[reg_A] = value & 0b11111111
+
+            # push value in given register onto the top of the stack
             elif inst == PUSH:
                 # if push would overwrite the program at the bottom of memory, halt and throw an error
                 if self.reg[7] - 1 == self.prog_end:
@@ -156,6 +215,7 @@ class CPU:
                     reg_num = self.ram[self.pc+1]
                     self.ram[SP] = self.reg[reg_num]
             
+            # places value at the top of the stack into the given register
             elif inst == POP:
                 # if stack is empty:
                 # place value where sp is currently pointing into given register
@@ -218,7 +278,8 @@ class CPU:
                     Less = 0
                     Greater = 1
                     Equal = 0
-                
+            
+            # jump to the ram address in the given register
             elif inst == JMP:
                 reg_r = self.ram[self.pc+1]
                 address = self.reg[reg_r]
@@ -227,6 +288,7 @@ class CPU:
                 # don't increment the pc automatically
                 self.pc -= inst_len
 
+            # if Equal flag is true, jump to the ram address in the given register
             elif inst == JEQ:
                 if Equal:
                     reg_r = self.ram[self.pc+1]
@@ -239,7 +301,7 @@ class CPU:
                     # do nothing, increment pc later in loop
                     pass
 
-            
+            # if Equal flag is false, jump to the ram address in the given register
             elif inst == JNE:
                 if not Equal:
                     reg_r = self.ram[self.pc+1]
